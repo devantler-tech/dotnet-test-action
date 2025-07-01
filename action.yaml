@@ -16,7 +16,7 @@ runs:
   using: "composite"
   steps:
     - name: Generate GitHub App Token
-      uses: tibdex/github-app-token@v2
+      uses: tibdex/github-app-token@3beb63f4bd073e61482598c45c71c1019b59b73a # v2.1.0
       id: generate-token
       with:
         app_id: ${{ inputs.app_id }}
@@ -24,14 +24,23 @@ runs:
     - name: 📑 Checkout
       uses: actions/checkout@v4
       with:
-        lfs: true
+        persist-credentials: false
         token: ${{ steps.generate-token.outputs.token }}
     - name: ⚙️ Setup .NET
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 9
     - name: 🚚 Add GHCR as NuGet feed
-      run: dotnet nuget add source --username ${{ github.actor }} --password ${{ inputs.github_token }} --store-password-in-clear-text --name github "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json"
+      run: |
+        dotnet nuget add source \
+          --username ${GITHUB_ACTOR} \
+          --password ${GITHUB_TOKEN} \
+          --store-password-in-clear-text \
+          --name github \
+          "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json"
+      env:
+        GITHUB_ACTOR: ${{ github.actor }}
+        GITHUB_TOKEN: ${{ inputs.github_token }}
       shell: bash
     - name: 🧪 Test
       run: dotnet test --collect:"XPlat Code Coverage" --logger "console;verbosity=detailed"
@@ -53,7 +62,7 @@ runs:
       shell: pwsh
     - name: 📄 Upload Code Coverage to CodeCov
       if: inputs.codecov-token != ''
-      uses: codecov/codecov-action@v5
+      uses: codecov/codecov-action@18283e04ce6e62d37312384ff67231eb8fd56d24 # v5.4.3
       with:
         files: ${{ steps.get_coverage_files.outputs.COVERAGE_FILES }}
         fail_ci_if_error: true
